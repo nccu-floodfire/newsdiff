@@ -12,7 +12,7 @@ abstract class Pix_Table_Db_Adapter_MysqlCommon extends Pix_Table_Db_Adapter_SQL
     public function createTable($table)
     {
         $sql = "CREATE TABLE " . $this->column_quote($table->getTableName());
-	$types = array('bigint', 'tinyint', 'int', 'varchar', 'char', 'text', 'float', 'double', 'binary');
+	$types = array('bigint', 'tinyint', 'int', 'varchar', 'char', 'text', 'float', 'double', 'binary', 'mediumtext');
 
 	foreach ($table->_columns as $name => $column) {
             $s = $this->column_quote($name) . ' ';
