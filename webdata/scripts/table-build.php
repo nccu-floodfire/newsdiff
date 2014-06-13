@@ -5,7 +5,9 @@ $path = dirname(__DIR__);
 
 include($path . '/init.inc.php');
 Pix_Table::$_save_memory = true;
-Pix_Setting::set('Table:DropTableEnable', true);
+if (isset($argv[0]) &&  $argv[0] === '--drop-table') {
+    Pix_Setting::set('Table:DropTableEnable', true);
+}
 
 foreach(glob($path . '/models/*.php') AS $m) {
     $p = pathinfo($m);
