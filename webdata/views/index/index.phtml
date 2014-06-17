@@ -2,37 +2,23 @@
 $sources = News::getSources();
 ?>
 <?= $this->partial('/common/header.phtml', $this) ?>
-<?php foreach ($this->news_array as $news) { ?>
-<?php $first_info = $news->infos->ordeR('time ASC')->first(); ?>
-<h1>[<?= $this->escape($sources[$news->source]) ?>]<a href="/index/log/<?= $news->id ?>"><?= $this->escape($first_info->title) ?></a></h1>
-<h4><?= $this->escape(urldecode($news->url)) ?></h4>
 <table class="table">
     <tr>
-        <td>時間</td>
-        <td>動作</td>
+        <td>媒體</td>
         <td>標題</td>
+        <td>時間</td>
+        <td>網址</td>
     </tr>
-    <?php $last_info = null; ?>
+<?php foreach ($this->news_array as $news) { ?>
+<?php $first_info = $news->infos->ordeR('time ASC')->first(); ?>
     <?php foreach ($news->infos as $info) { ?>
     <tr>
+        <td><?= $this->escape($sources[$news->source]) ?></td>
+        <td><?= $info->title ?></td>
         <td><a href="/index/log/<?= $news->id ?>#<?= $info->time ?>"><?= date('c', $info->time) ?></a></td>
-        <td>
-            <?php if (is_null($last_info)) { ?>
-            第一次抓到新聞
-            <?php } else { ?>
-            <?php if ($last_info->title != $info->title) { ?>
-            標題
-            <?php } ?>
-            <?php if ($last_info->body != $info->body) { ?>
-            內容
-            <?php } ?>
-            修改
-            <?php } ?>
-        </td>
-        <td><?= $this->escape($info->title) ?></td>
+        <td><?= $this->escape($news->url) ?></td>
     </tr>
-    <?php $last_info = $info; ?>
     <?php } ?>
-</table>
 <?php } ?>
+</table>
 <?= $this->partial('/common/footer.phtml', $this) ?>
