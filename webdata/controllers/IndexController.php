@@ -25,7 +25,7 @@ class IndexController extends Pix_Controller
             return $this->redirect('/');
         }
 
-        $this->view->news_array = News::search(array('source' => intval($source_id)))->order('last_changed_at DESC')->limit(30);
+        $this->view->news_array = News::search(array('source' => intval($source_id)))->order('last_fetch_at DESC')->limit(100);
         return $this->redraw('/index/index.phtml');
     }
 
