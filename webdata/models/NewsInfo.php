@@ -17,4 +17,24 @@ class NewsInfo extends Pix_Table
         $this->_columns['title'] = array('type' => 'text');
         $this->_columns['body'] = array('type' => 'text');
     }
+
+    public static function insert($data) {
+        $url = 'http://news-ckip.source.today/push_to_ckip';
+        $fields = array(
+            'text' => urlencode($data['title'] . ' ' . $data['body']),
+        );
+        foreach($fields as $key=>$value) { $fields_string .= $key.'='.$value.'&'; }
+        rtrim($fields_string, '&');
+
+        $ch = curl_init();
+
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, count($fields));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
+
+        $result = curl_exec($ch);
+        curl_close($ch);
+
+        return parent::insert($data);
+    }
 }
