@@ -35,6 +35,11 @@ _gaq.push(['_trackPageview']);
             <?php } ?>
         </ul>
         <form class="navbar-search pull-left" method="get" action="/index/search">
+            <select style="margin: 0px;" class="form-control" name="query-option">
+                <option value="0">標題</option>
+                <option value="1">時間</option>
+                <option value="2">網址</option>
+            </select>
             <input type="text" class="search-query" name="q" placeholder="請輸入新聞連結">
         </form>
     </div>

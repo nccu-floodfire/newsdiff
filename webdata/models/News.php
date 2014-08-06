@@ -137,4 +137,7 @@ class News extends Pix_Table
 //            15 => '三立',
         );
     }
+
+    public static function findByTitle($title) {
+    }
 }
