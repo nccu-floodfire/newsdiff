@@ -12,40 +12,54 @@ class IndexController extends Pix_Controller
 		$now = time();
 		$ts_start = $now - 86400;
 		$ts_end = $now;
+		$enable_search = false;
 		if (!empty($queryTimeStart)) {
 			$ts_start = strtotime($queryTimeStart);
+			$enable_search = true;
 		}
 		if (!empty($queryTimeEnd)) {
 			$ts_end = strtotime($queryTimeEnd);
+			$enable_search = true;
+		}
+
+		if (!empty($queryTitle)) {
+			$enable_search = true;
 		}
 		$this->view->query_title = $queryTitle;
 		$this->view->query_time_start = $queryTimeStart;
 		$this->view->query_time_end = $queryTimeEnd;
 
-		return array($ts_start, $ts_end, $queryTitle);
+		return array($ts_start, $ts_end, $queryTitle, $enable_search);
 	}
     public function indexAction()
     {
-	    list($ts_start, $ts_end, $queryTitle) = $this->_initSearch();
+	    $iscsv = $this->_initCsv();
+	    list($ts_start, $ts_end, $queryTitle, $enable_search) = $this->_initSearch();
 
-	    if (!empty($queryTitle)) {
-		    $resObj = $this->_searchNews($ts_start, $ts_end, $queryTitle);
-		    $this->view->search_array = $resObj;
+	    if ($enable_search) {
+		    $resArr = $this->_searchNews($ts_start, $ts_end, $queryTitle, null, $iscsv);
+		    $this->view->search_array = $resArr;
 	    } else {
 		    $this->view->news_array = News::search(1)->order('last_fetch_at DESC')->limit(100);
 	    }
+	    if ($enable_search && $iscsv) {
+		    $this->_handelCsv($resArr);
+	    }
     }
-
-	private function _searchNews($ts_start, $ts_end, $queryTitle, $source_id = null)
+	private function _searchNews($ts_start, $ts_end, $queryTitle, $source_id = null, $iscsv = false)
 	{
-		$resObj = array();
+		$resArr = array();
 		$db = News::getDb();
 		$source_id_statement = "";
+		$addon_select = "";
+		if ($iscsv) {
+			$addon_select = ", ni.body";
+		}
 		if ($source_id !== null) {
 			$source_id_statement = " AND n.source = $source_id ";
 		}
 		$sql = <<<EOF
-SELECT n.id, ni.title, n.source, ni.time FROM
+SELECT n.id, ni.title, n.source, ni.time $addon_select FROM
 news_info as ni
 LEFT JOIN news as n
 ON ni.news_id = n.id
@@ -55,14 +69,38 @@ AND ni.title LIKE '%$queryTitle%'
 EOF;
 		$res = $db->query($sql);
 
-		while ($obj = $res->fetch_object()) {
-			$resObj [] = $obj;
+		while ($row = $res->fetch_assoc()) {
+			$resArr [] = $row;
 		}
-		return $resObj;
+		return $resArr;
 	}
 
-	public function exportcsvAction()
+	private function _initCsv()
 	{
+		$iscsv = filter_input(INPUT_GET, 'iscsv', FILTER_VALIDATE_INT);
+		return $iscsv;
+	}
+
+	private function _handelCsv($input)
+	{
+		//$file = "text";
+		header('Content-Description: File Transfer');
+		header('Content-Type: application/octet-stream');
+		header('Content-Disposition: attachment; filename=export.csv');
+		header('Expires: 0');
+		header('Cache-Control: must-revalidate');
+		header('Pragma: public');
+		//header('Content-Length: ' . strlen($file));
+		//echo $file;
+		$sourceMap = News::getSources();
+		$out = fopen('php://output', 'w');
+		foreach ($input as $arr) {
+			$arr["time"] = date("Y-m-d: H:i:s", $arr["time"]);
+			$arr["source"] = $sourceMap[$arr["source"]];
+			fputcsv($out, $arr);
+		}
+		fclose($out);
+		exit;
 	}
 
     public function logAction()
@@ -77,20 +115,21 @@ EOF;
 
     public function sourceAction()
     {
-	    list($ts_start, $ts_end, $queryTitle) = $this->_initSearch();
+	    $iscsv = $this->_initCsv();
+	    list($ts_start, $ts_end, $queryTitle, $enable_search) = $this->_initSearch();
 	    list(, /*index*/, /*source*/, $source_id) = explode('/', $this->getURI());
-	    var_dump($source_id);
-	    if (!empty($queryTitle)) {
-		    $resObj = $this->_searchNews($ts_start, $ts_end, $queryTitle, $source_id);
-		    $this->view->search_array = $resObj;
+	    if ($enable_search) {
+		    $resArr = $this->_searchNews($ts_start, $ts_end, $queryTitle, $source_id, $iscsv);
+		    $this->view->search_array = $resArr;
 	    } else {
-
 		    $sources = News::getSources();
 		    if (!array_key_exists(intval($source_id), $sources)) {
 			    return $this->redirect('/');
 		    }
-
 		    $this->view->news_array = News::search(array('source' => intval($source_id)))->order('last_fetch_at DESC')->limit(100);
+	    }
+	    if ($enable_search && $iscsv) {
+		    $this->_handelCsv($resArr);
 	    }
 	    $this->view->source_id = intval($source_id);
         return $this->redraw('/index/index.phtml');

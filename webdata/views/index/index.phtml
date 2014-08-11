@@ -1,8 +1,17 @@
+<script>
+	function exportCsv()
+	{
+		var x = window.location + "&iscsv=1";
+		window.location = x;
+	}
+</script>
 <?php
 $sources = News::getSources();
 ?>
 <?= $this->partial('/common/header.phtml', $this) ?>
 <?php if (count($this->search_array)): ?>
+	<button onclick="exportCsv();">Export CSV</button>
+	<button>Export IBM SMA Format</button>
 <table class="table">
     <tr>
         <td>媒體</td>
@@ -11,9 +20,9 @@ $sources = News::getSources();
     </tr>
 	<?php foreach ($this->search_array as $news) { ?>
 		<tr>
-			<td><?= $this->escape($sources[$news->source]) ?></td>
-			<td><a href="/index/log/<?= $news->id ?>#<?= $news->time ?>"><?= $news->title ?></a></td>
-			<td><?= date("Y-m-d H:i:s", $news->time) ?></td>
+			<td><?= $this->escape($sources[$news["source"]]) ?></td>
+			<td><a href="/index/log/<?= $news["id"] ?>#<?= $news["time"] ?>"><?= $news["title"] ?></a></td>
+			<td><?= date("Y-m-d H:i:s", $news["time"]) ?></td>
 		</tr>
 	<?php } ?>
 	</table>
