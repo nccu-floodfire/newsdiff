@@ -6,6 +6,8 @@
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.2.2/bootstrap.min.js"></script>
 <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.2.2/css/bootstrap.css">
+<script src="/static/datepicker/js/bootstrap-datepicker.js"></script>
+<link rel="stylesheet" href="/static/datepicker/css/datepicker.css">
 <?php if (getenv('GOOGLEANALYTICS_ACCOUNT')) { ?>
 <script type="text/javascript">
 var _gaq = _gaq || [];
@@ -35,12 +37,21 @@ _gaq.push(['_trackPageview']);
             <?php } ?>
         </ul>
         <form class="navbar-search pull-left" method="get" action="/index/search">
-            <select style="margin: 0px;" class="form-control" name="query-option">
-                <option value="0">標題</option>
-                <option value="1">時間</option>
-                <option value="2">網址</option>
-            </select>
-            <input type="text" class="search-query" name="q" placeholder="請輸入新聞連結">
+	        新聞連結: <input type="text" class="search-query" name="q" placeholder="請輸入新聞連結">
+        </form>
+	    <?php
+	    $source_str = "";
+	    if ($this->source_id > 0) {
+		    $source_str = "source/{$this->source_id}";
+	    }
+	    ?>
+	    <form class="navbar-search pull-left" method="get" action="/index/<?=$source_str?>">
+	        標題: <input type="text" class="search-query" name="q_title" placeholder="搜尋標題" value="<?=$this->query_title?>">
+		    開始時間: <input type="text" class="search-query datepicker" data-date-format="yyyy-mm-dd" name="q_timestart" placeholder="搜尋時間" value="<?=$this->query_time_start?>">
+		    結束時間: <input type="text" class="search-query datepicker" data-date-format="yyyy-mm-dd" name="q_timeend" placeholder="搜尋時間" value="<?=$this->query_time_end?>">
+		    <button type="submit">Search</button>
+		    <button>Export CSV</button>
+		    <button>Export IBM SMA Format</button>
         </form>
     </div>
 </div>

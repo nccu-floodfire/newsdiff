@@ -2,10 +2,68 @@
 
 class IndexController extends Pix_Controller
 {
+	private function _initSearch()
+	{
+		$this->view->search_array = array();
+		$this->view->news_array = array();
+		$queryTitle = filter_input(INPUT_GET, 'q_title', FILTER_SANITIZE_SPECIAL_CHARS);
+		$queryTimeStart = filter_input(INPUT_GET, 'q_timestart', FILTER_SANITIZE_SPECIAL_CHARS);
+		$queryTimeEnd = filter_input(INPUT_GET, 'q_timeend', FILTER_SANITIZE_SPECIAL_CHARS);
+		$now = time();
+		$ts_start = $now - 86400;
+		$ts_end = $now;
+		if (!empty($queryTimeStart)) {
+			$ts_start = strtotime($queryTimeStart);
+		}
+		if (!empty($queryTimeEnd)) {
+			$ts_end = strtotime($queryTimeEnd);
+		}
+		$this->view->query_title = $queryTitle;
+		$this->view->query_time_start = $queryTimeStart;
+		$this->view->query_time_end = $queryTimeEnd;
+
+		return array($ts_start, $ts_end, $queryTitle);
+	}
     public function indexAction()
     {
-        $this->view->news_array = News::search(1)->order('last_fetch_at DESC')->limit(100);
+	    list($ts_start, $ts_end, $queryTitle) = $this->_initSearch();
+
+	    if (!empty($queryTitle)) {
+		    $resObj = $this->_searchNews($ts_start, $ts_end, $queryTitle);
+		    $this->view->search_array = $resObj;
+	    } else {
+		    $this->view->news_array = News::search(1)->order('last_fetch_at DESC')->limit(100);
+	    }
     }
+
+	private function _searchNews($ts_start, $ts_end, $queryTitle, $source_id = null)
+	{
+		$resObj = array();
+		$db = News::getDb();
+		$source_id_statement = "";
+		if ($source_id !== null) {
+			$source_id_statement = " AND n.source = $source_id ";
+		}
+		$sql = <<<EOF
+SELECT n.id, ni.title, n.source, ni.time FROM
+news_info as ni
+LEFT JOIN news as n
+ON ni.news_id = n.id
+WHERE ni.time BETWEEN $ts_start AND $ts_end
+$source_id_statement
+AND ni.title LIKE '%$queryTitle%'
+EOF;
+		$res = $db->query($sql);
+
+		while ($obj = $res->fetch_object()) {
+			$resObj [] = $obj;
+		}
+		return $resObj;
+	}
+
+	public function exportcsvAction()
+	{
+	}
 
     public function logAction()
     {
@@ -19,46 +77,50 @@ class IndexController extends Pix_Controller
 
     public function sourceAction()
     {
-        list(, /*index*/, /*source*/, $source_id) = explode('/', $this->getURI());
-        $sources = News::getSources();
-        if (!array_key_exists(intval($source_id), $sources)) {
-            return $this->redirect('/');
-        }
+	    list($ts_start, $ts_end, $queryTitle) = $this->_initSearch();
+	    list(, /*index*/, /*source*/, $source_id) = explode('/', $this->getURI());
+	    var_dump($source_id);
+	    if (!empty($queryTitle)) {
+		    $resObj = $this->_searchNews($ts_start, $ts_end, $queryTitle, $source_id);
+		    $this->view->search_array = $resObj;
+	    } else {
 
-        $this->view->news_array = News::search(array('source' => intval($source_id)))->order('last_fetch_at DESC')->limit(100);
+		    $sources = News::getSources();
+		    if (!array_key_exists(intval($source_id), $sources)) {
+			    return $this->redirect('/');
+		    }
+
+		    $this->view->news_array = News::search(array('source' => intval($source_id)))->order('last_fetch_at DESC')->limit(100);
+	    }
+	    $this->view->source_id = intval($source_id);
         return $this->redraw('/index/index.phtml');
     }
 
     public function searchAction()
     {
-        $queryOption = $_GET['query-option'];
+	    $queryLink = @$_GET['q_link'];
+	    if (!empty ($queryLink) && $news = News::findByURL($queryLink)) {
+		    return $this->redirect('/index/log/' . $news->id);
+	    }
 
-        if ($queryOption === "0") {
-        } else if ($queryOption === "1") {
-        } else if ($queryOption === "2") {
-            if ($news = News::findByURL($_GET['q'])) {
-                return $this->redirect('/index/log/' . $news->id);
-            }
+	    // 處理 http://foo.com/news/2013/1/23/我是中文標題-123456 這種網址
+	    $terms = explode('/', $_GET['q']);
+	    $last_term = array_pop($terms);
+	    array_push($terms, urlencode($last_term));
+	    if ($news = News::findByURL(implode('/', $terms))) {
+		    return $this->redirect('/index/log/' . $news->id);
+	    }
 
-            // 處理 http://foo.com/news/2013/1/23/我是中文標題-123456 這種網址
-            $terms = explode('/', $_GET['q']);
-            $last_term = array_pop($terms);
-            array_push($terms, urlencode($last_term));
-            if ($news = News::findByURL(implode('/', $terms))) {
-                return $this->redirect('/index/log/' . $news->id);
-            }
+	    // 處理 http://foo.com/news/2013/1/23/news.php?category=中文分類&id=12345
+	    $url = $_GET['q'];
+	    $url = preg_replace_callback('/=([^&]*)/', function ($m) {
+		    return '=' . urlencode($m[1]);
+	    }, $url);
+	    if ($news = News::findByURL($url)) {
+		    return $this->redirect('/index/log/' . $news->id);
+	    }
 
-            // 處理 http://foo.com/news/2013/1/23/news.php?category=中文分類&id=12345
-            $url = $_GET['q'];
-            $url = preg_replace_callback('/=([^&]*)/', function($m){
-                return '=' . urlencode($m[1]);
-            }, $url);
-            if ($news = News::findByURL($url)) {
-                return $this->redirect('/index/log/' . $news->id);
-            }
-        }
-
-        return $this->alert('not found', '/');
+	    return $this->alert('not found', '/');
     }
 
     public function healthAction()

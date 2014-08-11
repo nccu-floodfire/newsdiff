@@ -2,23 +2,42 @@
 $sources = News::getSources();
 ?>
 <?= $this->partial('/common/header.phtml', $this) ?>
+<?php if (count($this->search_array)): ?>
 <table class="table">
     <tr>
         <td>媒體</td>
         <td>標題</td>
         <td>時間</td>
-        <td>網址</td>
     </tr>
+	<?php foreach ($this->search_array as $news) { ?>
+		<tr>
+			<td><?= $this->escape($sources[$news->source]) ?></td>
+			<td><a href="/index/log/<?= $news->id ?>#<?= $news->time ?>"><?= $news->title ?></a></td>
+			<td><?= date("Y-m-d H:i:s", $news->time) ?></td>
+		</tr>
+	<?php } ?>
+	</table>
+<?php endif;?>
+<?php if (count($this->news_array)): ?>
+	<table class="table">
+		<tr>
+			<td>媒體</td>
+			<td>標題</td>
+			<td>時間</td>
+		</tr>
+<?php endif; ?>
 <?php foreach ($this->news_array as $news) { ?>
 <?php $first_info = $news->infos->ordeR('time ASC')->first(); ?>
     <?php foreach ($news->infos as $info) { ?>
     <tr>
         <td><?= $this->escape($sources[$news->source]) ?></td>
-        <td><?= $info->title ?></td>
-        <td><a href="/index/log/<?= $news->id ?>#<?= $info->time ?>"><?= date('c', $info->time) ?></a></td>
-        <td><?= $this->escape($news->url) ?></td>
+        <td><a href="/index/log/<?= $news->id ?>#<?= $info->time ?>"><?= $info->title ?></a></td>
+        <td><?= date('Y-m-d H:i:s', $info->time) ?></td>
+        <!--<td><?= $this->escape($news->url) ?></td>-->
     </tr>
     <?php } ?>
 <?php } ?>
+<?php if (count($this->news_array)): ?>
 </table>
+<?php endif; ?>
 <?= $this->partial('/common/footer.phtml', $this) ?>
