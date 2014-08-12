@@ -34,7 +34,9 @@ class IndexController extends Pix_Controller
     public function indexAction()
     {
 	    $iscsv = $this->_initCsv();
+	    $issma = $this->_initSma();
 	    list($ts_start, $ts_end, $queryTitle, $enable_search) = $this->_initSearch();
+	    $resArr = array();
 
 	    if ($enable_search) {
 		    $resArr = $this->_searchNews($ts_start, $ts_end, $queryTitle, null, $iscsv);
@@ -45,6 +47,9 @@ class IndexController extends Pix_Controller
 	    if ($enable_search && $iscsv) {
 		    $this->_handelCsv($resArr);
 	    }
+	    if ($enable_search && $issma) {
+		    $this->_handelSma($resArr);
+	    }
     }
 	private function _searchNews($ts_start, $ts_end, $queryTitle, $source_id = null, $iscsv = false)
 	{
@@ -53,7 +58,7 @@ class IndexController extends Pix_Controller
 		$source_id_statement = "";
 		$addon_select = "";
 		if ($iscsv) {
-			$addon_select = ", ni.body";
+			$addon_select = ", ni.body, n.id, n.url";
 		}
 		if ($source_id !== null) {
 			$source_id_statement = " AND n.source = $source_id ";
@@ -81,6 +86,12 @@ EOF;
 		return $iscsv;
 	}
 
+	private function _initSma()
+	{
+		$issma = filter_input(INPUT_GET, 'issma', FILTER_VALIDATE_INT);
+		return $issma;
+	}
+
 	private function _handelCsv($input)
 	{
 		//$file = "text";
@@ -103,6 +114,38 @@ EOF;
 		exit;
 	}
 
+	private function _handelSma($input)
+	{
+		//$file = "text";
+		//header('Content-Description: File Transfer');
+		header('Content-Type: application/json');
+		header('Content-Disposition: attachment; filename=export.json');
+		header('Expires: 0');
+		header('Cache-Control: must-revalidate');
+		header('Pragma: public');
+		//header('Content-Length: ' . strlen($file));
+		//echo $file;
+		$outputArr = array();
+		$sourceMap = News::getSources();
+		//$out = fopen('php://output', 'w');
+		foreach ($input as $arr) {
+			$newArr['Id'] = $arr["id"];
+			$newArr['Url'] = $arr["url"];
+
+			$newArr["Published"] = date("Y-m-d: H:i:s", $arr["time"]);
+			$newArr["SubjectHtml"] = $arr["title"];
+			$newArr["TextHtml"] = $arr["body"];
+			$newArr["DocumentType"] = "news";
+			$newArr["SiteUrl"] = $arr["url"];
+			$newArr["SiteName"] = $sourceMap[$arr["source"]];
+			$outputArr []= $newArr;
+			//$arr["source"] = $sourceMap[$arr["source"]];
+		}
+		echo json_encode($outputArr);
+		//fclose($out);
+		exit;
+	}
+
     public function logAction()
     {
         list(, /*index*/, /*log*/, $news_id) = explode('/', $this->getURI());
@@ -116,6 +159,7 @@ EOF;
     public function sourceAction()
     {
 	    $iscsv = $this->_initCsv();
+	    $issma = $this->_initSma();
 	    list($ts_start, $ts_end, $queryTitle, $enable_search) = $this->_initSearch();
 	    list(, /*index*/, /*source*/, $source_id) = explode('/', $this->getURI());
 	    if ($enable_search) {
@@ -130,6 +174,9 @@ EOF;
 	    }
 	    if ($enable_search && $iscsv) {
 		    $this->_handelCsv($resArr);
+	    }
+	    if ($enable_search && $issma) {
+		    $this->_handelSma($resArr);
 	    }
 	    $this->view->source_id = intval($source_id);
         return $this->redraw('/index/index.phtml');
