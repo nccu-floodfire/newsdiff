@@ -18,7 +18,7 @@ class IndexController extends Pix_Controller
 			$enable_search = true;
 		}
 		if (!empty($queryTimeEnd)) {
-			$ts_end = strtotime($queryTimeEnd);
+			$ts_end = strtotime($queryTimeEnd) + 86399;
 			$enable_search = true;
 		}
 
