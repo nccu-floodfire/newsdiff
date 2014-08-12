@@ -4,6 +4,11 @@
 		var x = window.location + "&iscsv=1";
 		window.location = x;
 	}
+	function exportSma()
+	{
+		var x = window.location + "&issma=1";
+		window.location = x;
+	}
 </script>
 <?php
 $sources = News::getSources();
@@ -11,7 +16,7 @@ $sources = News::getSources();
 <?= $this->partial('/common/header.phtml', $this) ?>
 <?php if (count($this->search_array)): ?>
 	<button onclick="exportCsv();">Export CSV</button>
-	<button>Export IBM SMA Format</button>
+	<button onclick="exportSma();">Export IBM SMA Format</button>
 <table class="table">
     <tr>
         <td>媒體</td>
