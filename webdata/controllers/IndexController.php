@@ -105,6 +105,7 @@ EOF;
 		//echo $file;
 		$sourceMap = News::getSources();
 		$out = fopen('php://output', 'w');
+		fputs($out, $bom =( chr(0xEF) . chr(0xBB) . chr(0xBF) ));
 		foreach ($input as $arr) {
 			$arr["time"] = date("Y-m-d: H:i:s", $arr["time"]);
 			$arr["source"] = $sourceMap[$arr["source"]];
