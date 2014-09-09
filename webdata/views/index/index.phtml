@@ -26,7 +26,7 @@ $sources = News::getSources();
 	<?php foreach ($this->search_array as $news) { ?>
 		<tr>
 			<td><?= $this->escape($sources[$news["source"]]) ?></td>
-			<td><a class="btn btn-info" href="http://newsdiff.g0v.ronny.tw/index/search?q=<?= $this->escape($news->url) ?>" target="_blank">diff</a> <a href="/index/log/<?= $news["id"] ?>#<?= $news["time"] ?>"><?= $news["title"] ?></a></td>
+			<td><a class="btn btn-info" href="http://newsdiff.g0v.ronny.tw/index/search?q=<?= $this->escape($news['url']) ?>" target="_blank">diff</a> <a href="/index/log/<?= $news["id"] ?>#<?= $news["time"] ?>"><?= $news["title"] ?></a></td>
 			<td><?= date("Y-m-d H:i:s", $news["time"]) ?></td>
 		</tr>
 	<?php } ?>
