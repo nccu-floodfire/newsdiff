@@ -126,7 +126,7 @@ EOF;
 		header('Pragma: public');
 		//header('Content-Length: ' . strlen($file));
 		//echo $file;
-		$outputArr = array();
+		$outputArr["documents"] = array();
 		$sourceMap = News::getSources();
 		//$out = fopen('php://output', 'w');
 		foreach ($input as $arr) {
@@ -139,7 +139,7 @@ EOF;
 			$newArr["DocumentType"] = "news";
 			$newArr["SiteUrl"] = $arr["url"];
 			$newArr["SiteName"] = $sourceMap[$arr["source"]];
-			$outputArr []= $newArr;
+			$outputArr["documents"] []= $newArr;
 			//$arr["source"] = $sourceMap[$arr["source"]];
 		}
 		echo json_encode($outputArr);
