@@ -2,68 +2,72 @@
 
 class IndexController extends Pix_Controller
 {
-	private function _initSearch()
-	{
-		$this->view->search_array = array();
-		$this->view->news_array = array();
-		$queryTitle = filter_input(INPUT_GET, 'q_title', FILTER_SANITIZE_SPECIAL_CHARS);
-		$queryTimeStart = filter_input(INPUT_GET, 'q_timestart', FILTER_SANITIZE_SPECIAL_CHARS);
-		$queryTimeEnd = filter_input(INPUT_GET, 'q_timeend', FILTER_SANITIZE_SPECIAL_CHARS);
-		$now = time();
-		$ts_start = $now - 86400;
-		$ts_end = $now;
-		$enable_search = false;
-		if (!empty($queryTimeStart)) {
-			$ts_start = strtotime($queryTimeStart);
-			$enable_search = true;
-		}
-		if (!empty($queryTimeEnd)) {
-			$ts_end = strtotime($queryTimeEnd) + 86399;
-			$enable_search = true;
-		}
+    private function _initSearch()
+    {
+        $this->view->search_array = array();
+        $this->view->news_array = array();
+        $queryTitle = filter_input(INPUT_GET, 'q_title', FILTER_SANITIZE_SPECIAL_CHARS);
+        $queryTimeStart = filter_input(INPUT_GET, 'q_timestart', FILTER_SANITIZE_SPECIAL_CHARS);
+        $queryTimeEnd = filter_input(INPUT_GET, 'q_timeend', FILTER_SANITIZE_SPECIAL_CHARS);
+        $now = time();
+        $ts_start = $now - 86400;
+        $ts_end = $now;
+        $enable_search = false;
+        if (!empty($queryTimeStart)) {
+            $ts_start = strtotime($queryTimeStart);
+            $enable_search = true;
+        }
+        if (!empty($queryTimeEnd)) {
+            $ts_end = strtotime($queryTimeEnd) + 86399;
+            $enable_search = true;
+        }
 
-		if (!empty($queryTitle)) {
-			$enable_search = true;
-		}
-		$this->view->query_title = $queryTitle;
-		$this->view->query_time_start = $queryTimeStart;
-		$this->view->query_time_end = $queryTimeEnd;
+        if (!empty($queryTitle)) {
+            $enable_search = true;
+        }
+        $this->view->query_title = $queryTitle;
+        $this->view->query_time_start = $queryTimeStart;
+        $this->view->query_time_end = $queryTimeEnd;
 
-		return array($ts_start, $ts_end, $queryTitle, $enable_search);
-	}
+        return array($ts_start, $ts_end, $queryTitle, $enable_search);
+    }
     public function indexAction()
     {
-	    $iscsv = $this->_initCsv();
-	    $issma = $this->_initSma();
-	    list($ts_start, $ts_end, $queryTitle, $enable_search) = $this->_initSearch();
-	    $resArr = array();
+        $is_export = false;
+        $iscsv = $this->_initCsv();
+        $issma = $this->_initSma();
+        if ($iscsv || $issma) {
+            $is_export = true;
+        }
+        list($ts_start, $ts_end, $queryTitle, $enable_search) = $this->_initSearch();
+        $resArr = array();
 
-	    if ($enable_search) {
-		    $resArr = $this->_searchNews($ts_start, $ts_end, $queryTitle, null, $iscsv);
-		    $this->view->search_array = $resArr;
-	    } else {
-		    $this->view->news_array = News::search(1)->order('last_fetch_at DESC')->limit(100);
-	    }
-	    if ($enable_search && $iscsv) {
-		    $this->_handelCsv($resArr);
-	    }
-	    if ($enable_search && $issma) {
-		    $this->_handelSma($resArr);
-	    }
+        if ($enable_search) {
+            $resArr = $this->_searchNews($ts_start, $ts_end, $queryTitle, null, $is_export);
+            $this->view->search_array = $resArr;
+        } else {
+            $this->view->news_array = News::search(1)->order('last_fetch_at DESC')->limit(100);
+        }
+        if ($enable_search && $iscsv) {
+            $this->_handelCsv($resArr);
+        }
+        if ($enable_search && $issma) {
+            $this->_handleSma($resArr);
+        }
     }
-	private function _searchNews($ts_start, $ts_end, $queryTitle, $source_id = null, $iscsv = false)
-	{
-		$resArr = array();
-		$db = News::getDb();
-		$source_id_statement = "";
-		$addon_select = "";
-		if ($iscsv) {
-			$addon_select = ", ni.body, n.id, n.url";
-		}
-		if ($source_id !== null) {
-			$source_id_statement = " AND n.source = $source_id ";
-		}
-		$sql = <<<EOF
+    private function _searchNews($ts_start, $ts_end, $queryTitle, $source_id = null, $is_export = false)
+    {
+        $resArr = array();
+        $db = News::getDb();
+        $source_id_statement = "";
+        $addon_select = "";
+        if ($is_export) {
+            $addon_select = ", ni.body, n.id, n.url";
+        }
+        if ($source_id !== null) {
+            $source_id_statement = " AND n.source = $source_id ";
+        }
+        $sql = <<<EOF
 SELECT n.id, ni.title, n.source, ni.time $addon_select FROM
 news_info as ni
 LEFT JOIN news as n
@@ -72,80 +76,80 @@ WHERE ni.time BETWEEN $ts_start AND $ts_end
 $source_id_statement
 AND ni.title LIKE '%$queryTitle%'
 EOF;
-		$res = $db->query($sql);
+        $res = $db->query($sql);
 
-		while ($row = $res->fetch_assoc()) {
-			$resArr [] = $row;
-		}
-		return $resArr;
-	}
+        while ($row = $res->fetch_assoc()) {
+            $resArr [] = $row;
+        }
+        return $resArr;
+    }
 
-	private function _initCsv()
-	{
-		$iscsv = filter_input(INPUT_GET, 'iscsv', FILTER_VALIDATE_INT);
-		return $iscsv;
-	}
+    private function _initCsv()
+    {
+        $is_export = filter_input(INPUT_GET, 'iscsv', FILTER_VALIDATE_INT);
+        return $is_export;
+    }
 
-	private function _initSma()
-	{
-		$issma = filter_input(INPUT_GET, 'issma', FILTER_VALIDATE_INT);
-		return $issma;
-	}
+    private function _initSma()
+    {
+        $issma = filter_input(INPUT_GET, 'issma', FILTER_VALIDATE_INT);
+        return $issma;
+    }
 
-	private function _handelCsv($input)
-	{
-		//$file = "text";
-		header('Content-Description: File Transfer');
-		header('Content-Type: application/octet-stream');
-		header('Content-Disposition: attachment; filename=export.csv');
-		header('Expires: 0');
-		header('Cache-Control: must-revalidate');
-		header('Pragma: public');
-		//header('Content-Length: ' . strlen($file));
-		//echo $file;
-		$sourceMap = News::getSources();
-		$out = fopen('php://output', 'w');
-		fputs($out, $bom =( chr(0xEF) . chr(0xBB) . chr(0xBF) ));
-		foreach ($input as $arr) {
-			$arr["time"] = date("Y-m-d: H:i:s", $arr["time"]);
-			$arr["source"] = $sourceMap[$arr["source"]];
-			fputcsv($out, $arr);
-		}
-		fclose($out);
-		exit;
-	}
+    private function _handelCsv($input)
+    {
+        //$file = "text";
+        header('Content-Description: File Transfer');
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename=export.csv');
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        //header('Content-Length: ' . strlen($file));
+        //echo $file;
+        $sourceMap = News::getSources();
+        $out = fopen('php://output', 'w');
+        fputs($out, $bom =( chr(0xEF) . chr(0xBB) . chr(0xBF) ));
+        foreach ($input as $arr) {
+            $arr["time"] = date("Y-m-d: H:i:s", $arr["time"]);
+            $arr["source"] = $sourceMap[$arr["source"]];
+            fputcsv($out, $arr);
+        }
+        fclose($out);
+        exit;
+    }
 
-	private function _handelSma($input)
-	{
-		//$file = "text";
-		//header('Content-Description: File Transfer');
-		header('Content-Type: application/json');
-		header('Content-Disposition: attachment; filename=export.json');
-		header('Expires: 0');
-		header('Cache-Control: must-revalidate');
-		header('Pragma: public');
-		//header('Content-Length: ' . strlen($file));
-		//echo $file;
-		$outputArr["documents"] = array();
-		$sourceMap = News::getSources();
-		//$out = fopen('php://output', 'w');
-		foreach ($input as $arr) {
-			$newArr['Id'] = $arr["id"];
-			$newArr['Url'] = $arr["url"];
+    private function _handleSma($input)
+    {
+        //$file = "text";
+        //header('Content-Description: File Transfer');
+        header('Content-Type: application/json');
+        header('Content-Disposition: attachment; filename=export.json');
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        //header('Content-Length: ' . strlen($file));
+        //echo $file;
+        $outputArr["documents"] = array();
+        $sourceMap = News::getSources();
+        //$out = fopen('php://output', 'w');
+        foreach ($input as $arr) {
+            $newArr['Id'] = $arr["id"];
+            $newArr['Url'] = $arr["url"];
 
-			$newArr["Published"] = date("Y-m-d: H:i:s", $arr["time"]);
-			$newArr["SubjectHtml"] = $arr["title"];
-			$newArr["TextHtml"] = $arr["body"];
-			$newArr["DocumentType"] = "news";
-			$newArr["SiteUrl"] = $arr["url"];
-			$newArr["SiteName"] = $sourceMap[$arr["source"]];
-			$outputArr["documents"] []= $newArr;
-			//$arr["source"] = $sourceMap[$arr["source"]];
-		}
-		echo json_encode($outputArr);
-		//fclose($out);
-		exit;
-	}
+            $newArr["Published"] = date("Y-m-d: H:i:s", $arr["time"]);
+            $newArr["SubjectHtml"] = $arr["title"];
+            $newArr["TextHtml"] = $arr["body"];
+            $newArr["DocumentType"] = "news";
+            $newArr["SiteUrl"] = $arr["url"];
+            $newArr["SiteName"] = $sourceMap[$arr["source"]];
+            $outputArr["documents"] []= $newArr;
+            //$arr["source"] = $sourceMap[$arr["source"]];
+        }
+        echo json_encode($outputArr);
+        //fclose($out);
+        exit;
+    }
 
     public function logAction()
     {
@@ -159,55 +163,59 @@ EOF;
 
     public function sourceAction()
     {
-	    $iscsv = $this->_initCsv();
-	    $issma = $this->_initSma();
-	    list($ts_start, $ts_end, $queryTitle, $enable_search) = $this->_initSearch();
-	    list(, /*index*/, /*source*/, $source_id) = explode('/', $this->getURI());
-	    if ($enable_search) {
-		    $resArr = $this->_searchNews($ts_start, $ts_end, $queryTitle, $source_id, $iscsv);
-		    $this->view->search_array = $resArr;
-	    } else {
-		    $sources = News::getSources();
-		    if (!array_key_exists(intval($source_id), $sources)) {
-			    return $this->redirect('/');
-		    }
-		    $this->view->news_array = News::search(array('source' => intval($source_id)))->order('last_fetch_at DESC')->limit(100);
-	    }
-	    if ($enable_search && $iscsv) {
-		    $this->_handelCsv($resArr);
-	    }
-	    if ($enable_search && $issma) {
-		    $this->_handelSma($resArr);
-	    }
-	    $this->view->source_id = intval($source_id);
+        $is_export = false;
+        $iscsv = $this->_initCsv();
+        $issma = $this->_initSma();
+        if ($iscsv || $issma) {
+            $is_export = true;
+        }
+        list($ts_start, $ts_end, $queryTitle, $enable_search) = $this->_initSearch();
+        list(, /*index*/, /*source*/, $source_id) = explode('/', $this->getURI());
+        if ($enable_search) {
+            $resArr = $this->_searchNews($ts_start, $ts_end, $queryTitle, $source_id, $is_export);
+            $this->view->search_array = $resArr;
+        } else {
+            $sources = News::getSources();
+            if (!array_key_exists(intval($source_id), $sources)) {
+                return $this->redirect('/');
+            }
+            $this->view->news_array = News::search(array('source' => intval($source_id)))->order('last_fetch_at DESC')->limit(100);
+        }
+        if ($enable_search && $iscsv) {
+            $this->_handelCsv($resArr);
+        }
+        if ($enable_search && $issma) {
+            $this->_handleSma($resArr);
+        }
+        $this->view->source_id = intval($source_id);
         return $this->redraw('/index/index.phtml');
     }
 
     public function searchAction()
     {
-	    $queryLink = @$_GET['q_link'];
-	    if (!empty ($queryLink) && $news = News::findByURL($queryLink)) {
-		    return $this->redirect('/index/log/' . $news->id);
-	    }
+        $queryLink = @$_GET['q_link'];
+        if (!empty ($queryLink) && $news = News::findByURL($queryLink)) {
+            return $this->redirect('/index/log/' . $news->id);
+        }
 
-	    // 處理 http://foo.com/news/2013/1/23/我是中文標題-123456 這種網址
-	    $terms = explode('/', $_GET['q']);
-	    $last_term = array_pop($terms);
-	    array_push($terms, urlencode($last_term));
-	    if ($news = News::findByURL(implode('/', $terms))) {
-		    return $this->redirect('/index/log/' . $news->id);
-	    }
+        // 處理 http://foo.com/news/2013/1/23/我是中文標題-123456 這種網址
+        $terms = explode('/', $_GET['q']);
+        $last_term = array_pop($terms);
+        array_push($terms, urlencode($last_term));
+        if ($news = News::findByURL(implode('/', $terms))) {
+            return $this->redirect('/index/log/' . $news->id);
+        }
 
-	    // 處理 http://foo.com/news/2013/1/23/news.php?category=中文分類&id=12345
-	    $url = $_GET['q'];
-	    $url = preg_replace_callback('/=([^&]*)/', function ($m) {
-		    return '=' . urlencode($m[1]);
-	    }, $url);
-	    if ($news = News::findByURL($url)) {
-		    return $this->redirect('/index/log/' . $news->id);
-	    }
+        // 處理 http://foo.com/news/2013/1/23/news.php?category=中文分類&id=12345
+        $url = $_GET['q'];
+        $url = preg_replace_callback('/=([^&]*)/', function ($m) {
+            return '=' . urlencode($m[1]);
+        }, $url);
+        if ($news = News::findByURL($url)) {
+            return $this->redirect('/index/log/' . $news->id);
+        }
 
-	    return $this->alert('not found', '/');
+        return $this->alert('not found', '/');
     }
 
     public function healthAction()
