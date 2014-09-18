@@ -146,7 +146,7 @@ EOF;
             $outputArr["documents"] []= $newArr;
             //$arr["source"] = $sourceMap[$arr["source"]];
         }
-        echo json_encode($outputArr);
+        echo json_encode($outputArr, JSON_UNESCAPED_UNICODE);
         //fclose($out);
         exit;
     }
