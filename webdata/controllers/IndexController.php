@@ -2,6 +2,27 @@
 
 class IndexController extends Pix_Controller
 {
+    private function _parseQuery($string, $field_name = 'ni.title')
+    {
+        if ($string === "*") {
+            return "";
+        }
+        $filterArr = array('(', ')', '"');
+        $string = trim(str_replace($filterArr, "", $string));
+        $queryArr = explode("|", $string);
+
+        $baseSQL = " $field_name LIKE ";
+        $output = " (";
+        foreach ($queryArr as $key => $value) {
+            $output .= $baseSQL . '"%' . $value . '%"';
+            if ($key < count($queryArr) - 1) {
+                $output .= " OR ";
+            }
+        }
+        $output .= ") ";
+        return $output;
+    }
+
     private function _initSearch($is_search = false)
     {
         $this->view->search_array = array();
@@ -80,8 +101,9 @@ WHERE ni.time BETWEEN $ts_start AND $ts_end
 $source_id_statement
 EOF;
 
+
         if (!empty($queryTitle)) {
-            $sql .= " AND ni.title LIKE '%$queryTitle%'"; // FIXME SQL injection
+            $sql .= " AND " .  $this->_parseQuery($queryTitle); // FIXME SQL injection
         }
 
         $res = $db->query($sql);
