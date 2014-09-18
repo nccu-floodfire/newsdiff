@@ -7,7 +7,7 @@ class IndexController extends Pix_Controller
         if ($string === "*") {
             return "";
         }
-        $filterArr = array('(', ')', '"');
+        $filterArr = array('(', ')', '&#34;');
         $string = trim(str_replace($filterArr, "", $string));
         $queryArr = explode("|", $string);
 
