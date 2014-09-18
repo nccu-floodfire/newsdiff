@@ -14,6 +14,7 @@ class IndexController extends Pix_Controller
         $baseSQL = " $field_name LIKE ";
         $output = " (";
         foreach ($queryArr as $key => $value) {
+            $value = trim($value);
             $output .= $baseSQL . '"%' . $value . '%"';
             if ($key < count($queryArr) - 1) {
                 $output .= " OR ";
