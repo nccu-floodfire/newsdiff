@@ -2,7 +2,7 @@
 
 class IndexController extends Pix_Controller
 {
-    private function _initSearch()
+    private function _initSearch($is_search = false)
     {
         $this->view->search_array = array();
         $this->view->news_array = array();
@@ -23,6 +23,10 @@ class IndexController extends Pix_Controller
         }
 
         if (!empty($queryTitle)) {
+            $enable_search = true;
+        }
+
+        if ($is_search) {
             $enable_search = true;
         }
         $this->view->query_title = $queryTitle;
@@ -74,8 +78,12 @@ LEFT JOIN news as n
 ON ni.news_id = n.id
 WHERE ni.time BETWEEN $ts_start AND $ts_end
 $source_id_statement
-AND ni.title LIKE '%$queryTitle%'
 EOF;
+
+        if (!empty($queryTitle)) {
+            $sql .= " AND ni.title LIKE '%$queryTitle%'"; // FIXME SQL injection
+        }
+
         $res = $db->query($sql);
 
         while ($row = $res->fetch_assoc()) {
@@ -253,5 +261,24 @@ EOF;
             echo "正在抓: " . KeyValue::get('Crawling');
         }
         exit;
+    }
+
+    public function SmaWebServiceAction()
+    {
+        $is_export = false;
+        $issma = true;
+        if ($issma) {
+            $is_export = true;
+        }
+        list($ts_start, $ts_end, $queryTitle, $enable_search) = $this->_initSearch(true);
+        $resArr = array();
+
+        if ($enable_search) {
+            $resArr = $this->_searchNews($ts_start, $ts_end, $queryTitle, null, $is_export);
+            $this->view->search_array = $resArr;
+        }
+        if ($enable_search && $issma) {
+            $this->_handleSma($resArr);
+        }
     }
 }
