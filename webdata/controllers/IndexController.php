@@ -32,6 +32,8 @@ class IndexController extends Pix_Controller
         $queryTimeStart = filter_input(INPUT_GET, 'q_timestart', FILTER_SANITIZE_SPECIAL_CHARS);
         $queryTimeEnd = filter_input(INPUT_GET, 'q_timeend', FILTER_SANITIZE_SPECIAL_CHARS);
         $querySource = filter_input(INPUT_GET, 'q_source', FILTER_VALIDATE_INT);
+        $queryLimit = filter_input(INPUT_GET, 'q_limit', FILTER_VALIDATE_INT);
+
         $now = time();
         $ts_start = $now - 86400;
         $ts_end = $now;
@@ -49,6 +51,10 @@ class IndexController extends Pix_Controller
             $enable_search = true;
         }
 
+        if (empty($queryLimit)) {
+            $queryLimit = 0;
+        }
+
         if ($is_search) {
             $enable_search = true;
         }
@@ -56,7 +62,7 @@ class IndexController extends Pix_Controller
         $this->view->query_time_start = $queryTimeStart;
         $this->view->query_time_end = $queryTimeEnd;
 
-        return array($ts_start, $ts_end, $queryTitle, $querySource, $enable_search);
+        return array($ts_start, $ts_end, $queryTitle, $querySource, $queryLimit, $enable_search);
     }
     public function indexAction()
     {
@@ -66,7 +72,7 @@ class IndexController extends Pix_Controller
         if ($iscsv || $issma) {
             $is_export = true;
         }
-        list($ts_start, $ts_end, $queryTitle, $querySource, $enable_search) = $this->_initSearch();
+        list($ts_start, $ts_end, $queryTitle, $querySource, $queryLimit, $enable_search) = $this->_initSearch();
         $resArr = array();
 
         if ($enable_search) {
@@ -82,17 +88,22 @@ class IndexController extends Pix_Controller
             $this->_handleSma($resArr);
         }
     }
-    private function _searchNews($ts_start, $ts_end, $queryTitle, $source_id = null, $is_export = false)
+    private function _searchNews($ts_start, $ts_end, $queryTitle, $source_id = null, $queryLimit = 0, $is_export = false)
     {
         $resArr = array();
         $db = News::getDb();
         $source_id_statement = "";
+        $limit_statement = "";
         $addon_select = "";
         if ($is_export) {
             $addon_select = ", ni.body, n.id, n.url";
         }
         if ($source_id !== null) {
             $source_id_statement = " AND n.source = $source_id ";
+        }
+
+        if ($queryLimit !== 0) {
+            $limit_statement = " LIMIT $queryLimit ";
         }
         $sql = <<<EOF
 SELECT n.id, ni.title, n.source, ni.time $addon_select FROM
@@ -101,6 +112,7 @@ LEFT JOIN news as n
 ON ni.news_id = n.id
 WHERE ni.time BETWEEN $ts_start AND $ts_end
 $source_id_statement
+$limit_statement
 EOF;
 
 
@@ -202,7 +214,7 @@ EOF;
         if ($iscsv || $issma) {
             $is_export = true;
         }
-        list($ts_start, $ts_end, $queryTitle, $querySource, $enable_search) = $this->_initSearch();
+        list($ts_start, $ts_end, $queryTitle, $querySource, $queryLimit, $enable_search) = $this->_initSearch();
         list(, /*index*/, /*source*/, $source_id) = explode('/', $this->getURI());
         if ($enable_search) {
             $resArr = $this->_searchNews($ts_start, $ts_end, $queryTitle, $source_id, $is_export);
@@ -295,11 +307,11 @@ EOF;
         if ($issma) {
             $is_export = true;
         }
-        list($ts_start, $ts_end, $queryTitle, $querySource, $enable_search) = $this->_initSearch(true);
+        list($ts_start, $ts_end, $queryTitle, $querySource, $queryLimit, $enable_search) = $this->_initSearch(true);
         $resArr = array();
 
         if ($enable_search) {
-            $resArr = $this->_searchNews($ts_start, $ts_end, $queryTitle, $querySource, $is_export);
+            $resArr = $this->_searchNews($ts_start, $ts_end, $queryTitle, $querySource, $queryLimit, $is_export);
             $this->view->search_array = $resArr;
         }
         if ($enable_search && $issma) {
