@@ -172,7 +172,7 @@ EOF;
             $newArr["Published"] = date("Y-m-d H:i:s", $arr["time"]);
             $newArr["SubjectHtml"] = $arr["title"];
             $newArr["TextHtml"] = $arr["body"];
-            $newArr["DocumentType"] = "news";
+            $newArr["DocumentType"] = $sourceMap[$arr["source"]];
             $newArr["SiteUrl"] = $arr["url"];
             $newArr["SiteName"] = $sourceMap[$arr["source"]];
             $newArr["Language"] = "Chinese - Traditional";
