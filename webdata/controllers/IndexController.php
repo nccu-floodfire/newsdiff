@@ -12,7 +12,7 @@ class IndexController extends Pix_Controller
         $queryArr = explode("|", $string);
 
         $baseSQL = " $field_name LIKE ";
-        $output = " (";
+        $output = " AND (";
         foreach ($queryArr as $key => $value) {
             $value = trim($value);
             $output .= $baseSQL . '"%' . $value . '%"';
@@ -105,7 +105,7 @@ EOF;
 
 
         if (!empty($queryTitle)) {
-            $sql .= " AND " .  $this->_parseQuery($queryTitle); // FIXME SQL injection
+            $sql .=  $this->_parseQuery($queryTitle); // FIXME SQL injection
         }
 
         $res = $db->query($sql);
