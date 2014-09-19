@@ -175,6 +175,7 @@ EOF;
             $newArr["DocumentType"] = "news";
             $newArr["SiteUrl"] = $arr["url"];
             $newArr["SiteName"] = $sourceMap[$arr["source"]];
+            $newArr["Language"] = "Chinese - Traditional";
             $outputArr["documents"] []= $newArr;
             //$arr["source"] = $sourceMap[$arr["source"]];
         }
