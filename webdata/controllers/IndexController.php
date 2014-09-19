@@ -102,24 +102,24 @@ class IndexController extends Pix_Controller
             $source_id_statement = " n.source = $source_id AND ";
         }
 
-        if ($queryLimit !== 0) {
+        if (!empty($queryLimit)) {
             $limit_statement = " LIMIT $queryLimit ";
         }
         $sql = <<<EOF
 SELECT n.id, ni.title, n.source, n.created_at as time $addon_select
 FROM news as n
 LEFT JOIN news_info as ni
-ON ni.news_id = n.id
+ON n.id = ni.news_id
 WHERE
 $source_id_statement
 n.created_at BETWEEN $ts_start AND $ts_end
-$limit_statement
 EOF;
 
 
         if (!empty($queryTitle)) {
             $sql .=  $this->_parseQuery($queryTitle); // FIXME SQL injection
         }
+        $sql .= $limit_statement;
 
         $res = $db->query($sql);
 
@@ -193,7 +193,7 @@ EOF;
             $newArr["SiteName"] = $sourceMap[$arr["source"]];
             $newArr["Language"] = "Chinese - Traditional";
             $outputArr []= $newArr;
-            if ($i >= 2000) {
+            if ($i >= 5000) {
                 $i = 0;
                 echo json_encode($outputArr, JSON_UNESCAPED_UNICODE);
                 $outputArr = array();
