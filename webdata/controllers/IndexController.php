@@ -174,10 +174,13 @@ EOF;
         header('Pragma: public');
         //header('Content-Length: ' . strlen($file));
         //echo $file;
-        $outputArr["documents"] = array();
+        $outputArr = array();
+        echo '{"documents":';
         $sourceMap = News::getSources();
         //$out = fopen('php://output', 'w');
+        $i = 0;
         foreach ($input as $arr) {
+            $i++;
             $newArr['Id'] = $arr["id"];
             $newArr['Url'] = $arr["url"];
 
@@ -188,10 +191,16 @@ EOF;
             $newArr["SiteUrl"] = $arr["url"];
             $newArr["SiteName"] = $sourceMap[$arr["source"]];
             $newArr["Language"] = "Chinese - Traditional";
-            $outputArr["documents"] []= $newArr;
+            $outputArr []= $newArr;
+            if ($i >= 100) {
+                $i = 0;
+                echo json_encode($outputArr, JSON_UNESCAPED_UNICODE);
+                $outputArr = array();
+            }
             //$arr["source"] = $sourceMap[$arr["source"]];
         }
         echo json_encode($outputArr, JSON_UNESCAPED_UNICODE);
+        echo "}";
         //fclose($out);
         exit;
     }
