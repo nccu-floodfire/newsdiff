@@ -99,19 +99,20 @@ class IndexController extends Pix_Controller
             $addon_select = ", ni.body, n.id, n.url";
         }
         if ($source_id !== null) {
-            $source_id_statement = " AND n.source = $source_id ";
+            $source_id_statement = " n.source = $source_id AND ";
         }
 
         if ($queryLimit !== 0) {
             $limit_statement = " LIMIT $queryLimit ";
         }
         $sql = <<<EOF
-SELECT n.id, ni.title, n.source, ni.time $addon_select FROM
-news_info as ni
-LEFT JOIN news as n
+SELECT n.id, ni.title, n.source, n.created_at as time $addon_select
+FROM news as n
+LEFT JOIN news_info as ni
 ON ni.news_id = n.id
-WHERE ni.time BETWEEN $ts_start AND $ts_end
+WHERE
 $source_id_statement
+n.created_at BETWEEN $ts_start AND $ts_end
 $limit_statement
 EOF;
 
@@ -192,7 +193,7 @@ EOF;
             $newArr["SiteName"] = $sourceMap[$arr["source"]];
             $newArr["Language"] = "Chinese - Traditional";
             $outputArr []= $newArr;
-            if ($i >= 100) {
+            if ($i >= 2000) {
                 $i = 0;
                 echo json_encode($outputArr, JSON_UNESCAPED_UNICODE);
                 $outputArr = array();
