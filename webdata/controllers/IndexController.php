@@ -31,6 +31,7 @@ class IndexController extends Pix_Controller
         $queryTitle = filter_input(INPUT_GET, 'q_title', FILTER_SANITIZE_SPECIAL_CHARS);
         $queryTimeStart = filter_input(INPUT_GET, 'q_timestart', FILTER_SANITIZE_SPECIAL_CHARS);
         $queryTimeEnd = filter_input(INPUT_GET, 'q_timeend', FILTER_SANITIZE_SPECIAL_CHARS);
+        $querySource = filter_input(INPUT_GET, 'q_source', FILTER_VALIDATE_INT);
         $now = time();
         $ts_start = $now - 86400;
         $ts_end = $now;
@@ -55,7 +56,7 @@ class IndexController extends Pix_Controller
         $this->view->query_time_start = $queryTimeStart;
         $this->view->query_time_end = $queryTimeEnd;
 
-        return array($ts_start, $ts_end, $queryTitle, $enable_search);
+        return array($ts_start, $ts_end, $queryTitle, $querySource, $enable_search);
     }
     public function indexAction()
     {
@@ -65,7 +66,7 @@ class IndexController extends Pix_Controller
         if ($iscsv || $issma) {
             $is_export = true;
         }
-        list($ts_start, $ts_end, $queryTitle, $enable_search) = $this->_initSearch();
+        list($ts_start, $ts_end, $queryTitle, $querySource, $enable_search) = $this->_initSearch();
         $resArr = array();
 
         if ($enable_search) {
@@ -200,7 +201,7 @@ EOF;
         if ($iscsv || $issma) {
             $is_export = true;
         }
-        list($ts_start, $ts_end, $queryTitle, $enable_search) = $this->_initSearch();
+        list($ts_start, $ts_end, $queryTitle, $querySource, $enable_search) = $this->_initSearch();
         list(, /*index*/, /*source*/, $source_id) = explode('/', $this->getURI());
         if ($enable_search) {
             $resArr = $this->_searchNews($ts_start, $ts_end, $queryTitle, $source_id, $is_export);
@@ -293,11 +294,11 @@ EOF;
         if ($issma) {
             $is_export = true;
         }
-        list($ts_start, $ts_end, $queryTitle, $enable_search) = $this->_initSearch(true);
+        list($ts_start, $ts_end, $queryTitle, $querySource, $enable_search) = $this->_initSearch(true);
         $resArr = array();
 
         if ($enable_search) {
-            $resArr = $this->_searchNews($ts_start, $ts_end, $queryTitle, null, $is_export);
+            $resArr = $this->_searchNews($ts_start, $ts_end, $queryTitle, $querySource, $is_export);
             $this->view->search_array = $resArr;
         }
         if ($enable_search && $issma) {
