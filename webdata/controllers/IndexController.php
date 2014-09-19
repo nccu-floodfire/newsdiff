@@ -227,7 +227,7 @@ EOF;
         list($ts_start, $ts_end, $queryTitle, $querySource, $queryLimit, $enable_search) = $this->_initSearch();
         list(, /*index*/, /*source*/, $source_id) = explode('/', $this->getURI());
         if ($enable_search) {
-            $resArr = $this->_searchNews($ts_start, $ts_end, $queryTitle, $source_id, $is_export);
+            $resArr = $this->_searchNews($ts_start, $ts_end, $queryTitle, $source_id, $queryLimit, $is_export);
             $this->view->search_array = $resArr;
         } else {
             $sources = News::getSources();
