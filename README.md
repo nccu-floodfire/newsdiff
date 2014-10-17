@@ -3,7 +3,7 @@
 
 這個版本是將 NewsDiff 修改為只抓取一次新聞，不作 Diff。
 
-未來規劃串斷詞系統，並每天計算新聞標題、內文中的詞頻。
+相關衍生專案可參考：每日新聞斷詞 http://news-ckip.source.today/
 
 
 NewsDiff
