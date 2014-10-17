@@ -4,7 +4,12 @@ class Crawler_CTS
 {
     public static function crawl($insert_limit)
     {
-        $content = Crawler::getBody('http://news.cts.com.tw/real/all/');
+        $content = Crawler::getBody('http://news.cts.com.tw/real');
+        $content = Crawler::getBody('http://news.cts.com.tw/real/index2.html');
+        $content = Crawler::getBody('http://news.cts.com.tw/real/index3.html');
+        $content = Crawler::getBody('http://news.cts.com.tw/real/index4.html');
+        $content = Crawler::getBody('http://news.cts.com.tw/real/index5.html');
+        $content = Crawler::getBody('http://news.cts.com.tw/real/index6.html');
         preg_match_all('#[a-z]*/[a-z]*/[0-9]*/[0-9]*\.html#', $content, $matches);
         $links = array_unique($matches[0]);
         $insert = $update = 0;
@@ -28,11 +33,25 @@ class Crawler_CTS
             $ret->title = $ret->body = 404;
             return $ret;
         }
-        if (!$title_dom = $doc->getElementsByTagName('h1')->item(0)) {
-            return null;
+        $ret->title = null;
+        foreach ($doc->getElementsByTagName('meta') as $meta_dom) {
+            if ('title' == $meta_dom->getAttribute('name')) {
+                $ret->title = $meta_dom->getAttribute('content');
+                break;
+            }
         }
-        $ret->title = trim($title_dom->nodeValue);
-        $ret->body = Crawler::getTextFromDom($doc->getElementById('ctscontent'));
+        if (is_null($ret->title)) {
+            if (!$title_dom = $doc->getElementsByTagName('h1')->item(0)) {
+                return null;
+            }
+            if (!$doc->getElementById('ctscontent')) {
+                return null;
+            }
+            $ret->title = trim($title_dom->nodeValue);
+            $ret->body = Crawler::getTextFromDom($doc->getElementById('ctscontent'));
+            return $ret;
+        }
+        $ret->body = Crawler::getTextFromDom($doc->getElementById('article'));
         return $ret;
     }
 }

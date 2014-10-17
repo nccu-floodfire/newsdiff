@@ -8,13 +8,23 @@ class Crawler
         return $url;
     }
 
-    public function roundRobinURL($url)
+    protected static $_record_cache = array();
+
+    public static function dns_get_record($host)
+    {
+        if (!array_key_exists($host, self::$_record_cache)) {
+            self::$_record_cache[$host] = dns_get_record($host, DNS_A);
+        }
+        return self::$_record_cache[$host];
+    }
+
+    public static function roundRobinURL($url)
     {
         if (!preg_match('#(https?://)([^/]*)(.*)#', $url, $matches)) {
             return array($url, null);
         }
         $host = $matches[2];
-        $records = dns_get_record($host, DNS_A);
+        $records = self::dns_get_record($host, DNS_A);
         if (!$records) {
             return array($url, null);
         }
@@ -123,7 +133,6 @@ class Crawler
     public static function updatePart($part, $total)
     {
         $now = time();
-        $start = microtime(true);
         $fetching_news = array();
         $count = 0;
         $update_limit = 300;
@@ -159,6 +168,7 @@ class Crawler
             return;
         }
         error_log("fetching $count news...");
+        $start = microtime(true);
 
         $handles = array();
         $mh = curl_multi_init();
