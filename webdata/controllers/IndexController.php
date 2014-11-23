@@ -76,7 +76,7 @@ class IndexController extends Pix_Controller
         $resArr = array();
 
         if ($enable_search) {
-            $resArr = $this->_searchNews($ts_start, $ts_end, $queryTitle, null, $is_export);
+            $resArr = $this->_searchNews($ts_start, $ts_end, $queryTitle, null, null, $is_export);
             $this->view->search_array = $resArr;
         } else {
             $this->view->news_array = News::search(1)->order('last_fetch_at DESC')->limit(100);
