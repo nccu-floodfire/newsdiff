@@ -1,7 +1,7 @@
 關於這個 Fork
 =============
 
-這個版本是將 NewsDiff 修改為只抓取一次新聞，不作 Diff。
+這個版本是將 NewsDiff 修改為只抓取一次新聞，不作 Diff。另外，加上了依新聞標題與時間搜尋新聞，並提供 csv 與 IBM SMA 資料格式的匯出與 API。
 
 相關衍生專案可參考：每日新聞斷詞 http://news-ckip.source.today/
 
