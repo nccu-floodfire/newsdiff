@@ -96,7 +96,7 @@ class IndexController extends Pix_Controller
         $limit_statement = "";
         $addon_select = "";
         if ($is_export) {
-            $addon_select = ", ni.body, n.id, n.url";
+            $addon_select = ", ni.body, n.id";
         }
         if ($source_id !== null) {
             $source_id_statement = " n.source = $source_id AND ";
@@ -106,7 +106,7 @@ class IndexController extends Pix_Controller
             $limit_statement = " LIMIT $queryLimit ";
         }
         $sql = <<<EOF
-SELECT n.id, ni.title, n.source, n.created_at as time $addon_select
+SELECT n.id, ni.title, n.source, n.url, n.created_at as time $addon_select
 FROM news as n
 LEFT JOIN news_info as ni
 ON n.id = ni.news_id
