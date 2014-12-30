@@ -8,7 +8,7 @@ $theTime = mktime();
 $str = "CREATE TABLE IF NOT EXISTS `news_raw_%s` (
   `news_id` int(11) NOT NULL,
   `time` int(11) NOT NULL,
-  `header` text NOT NULL,
+  `header` text NOT NULL DEFAULT '',
   `raw` mediumtext NOT NULL,
   PRIMARY KEY (`news_id`,`time`)
 ) ENGINE=InnoDB;";
