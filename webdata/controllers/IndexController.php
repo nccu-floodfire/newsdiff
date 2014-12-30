@@ -216,6 +216,16 @@ EOF;
         }
     }
 
+    public function rawAction()
+    {
+        list(, /*index*/, /*raw*/, $news_id)= explode('/', $this->getURI());
+
+        if (!$news = News::find(intval($news_id))){
+            return $this->redirect('/');
+        }
+        $this->view->sources = $news->getRaws();
+    }
+
     public function sourceAction()
     {
         $is_export = false;
