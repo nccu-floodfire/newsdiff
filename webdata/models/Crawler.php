@@ -67,7 +67,7 @@ class Crawler
             if ($throw_exception) {
                 throw new Exception('not 200: ' . $url, $info['http_code']);
             } else {
-                error_log('not 200: ' . $url);
+                error_log('ERROR ' . $info['http_code'] .':' . $url);
                 return '';
             }
         }
